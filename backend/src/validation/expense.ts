@@ -14,17 +14,22 @@ const expenseDateSchema = z
     message: "Expense date cannot be in the future.",
   });
 
-export const createExpenseSchema = z.object({
-  amount: z
-    .string()
-    .trim()
-    .refine((value) => isValidAmountInput(value), {
-      message: "Amount must be a positive number with up to 2 decimal places.",
-    }),
-  category: z.string().trim().min(1, "Category is required.").max(50),
-  description: z.string().trim().min(1, "Description is required.").max(200),
-  date: expenseDateSchema,
-});
+export const createExpenseSchema = z
+  .object({
+    amount: z
+      .string()
+      .trim()
+      .refine((value) => isValidAmountInput(value), {
+        message: "Amount must be a positive number with up to 2 decimal places.",
+      }),
+    category: z.string().trim().min(1, "Category is required.").max(50),
+    description: z.string().trim().max(200).optional(),
+    date: expenseDateSchema,
+  })
+  .transform((value) => ({
+    ...value,
+    description: value.description ?? "",
+  }));
 
 export const listExpensesQuerySchema = z
   .object({

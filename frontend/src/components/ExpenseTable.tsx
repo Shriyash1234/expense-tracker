@@ -336,8 +336,8 @@ const ExpenseTable = ({
                       );
                     })()}
                   </TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {expense.description}
+                  <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                    {expense.description || "No description"}
                   </TableCell>
                   <TableCell className="pr-4 text-right font-mono text-sm font-medium">
                     {formatCurrency(parseAmountToPaise(expense.amount))}

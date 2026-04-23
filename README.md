@@ -2,28 +2,37 @@
 
 Minimal full-stack expense tracker built for the assignment with a Node.js backend and a React frontend.
 
+## Live Links
+
+- Frontend: https://expense-tracker-frontend-pi-two.vercel.app/
+- Backend API: https://expense-tracker-b1fo.onrender.com
+- Repository: https://github.com/Shriyash1234/expense-tracker
+
+## Features
+
+- Create expenses with amount, category, optional description, and date.
+- View expenses in a table with a visible total for the current list.
+- Filter by predefined categories.
+- Filter by period using presets (`Today`, `This week`, `This month`) or a custom date range.
+- Sort the table by date from the `Date` column header.
+- Retry-safe create flow using idempotency keys.
+- Loading, empty, and error states in the UI.
+
 ## Tech Stack
 
 - Backend: Node.js, TypeScript, Express, MongoDB, Mongoose, Zod
-- Frontend: Vite, React, TypeScript, TanStack Query
+- Frontend: Vite, React, TypeScript, TanStack Query, shadcn-style UI components, Tailwind CSS
 - Testing: Vitest, Supertest, mongodb-memory-server
-- Deployment target: Render for the API, Vercel for the frontend, MongoDB Atlas for persistence
-
-## Why MongoDB
-
-MongoDB was chosen because it is fast to stand up in a timeboxed exercise, easy to host on Atlas, and still gives enough structure for this app through a strict Mongoose schema and API validation. The data shape is simple and document-friendly, so the trade-off is acceptable for this version.
+- Deployment: Render for the API, Vercel for the frontend, MongoDB Atlas for persistence
 
 ## Key Design Decisions
 
-- Money is stored as `amountPaise` integers in the database rather than floats to avoid rounding issues.
-- Expense `date` is stored as a `YYYY-MM-DD` string so the calendar date does not shift because of timezone conversions.
-- `POST /expenses` uses an `Idempotency-Key` header and stores a request fingerprint so client retries, refreshes, or repeated clicks do not create duplicate rows.
-- The frontend keeps the in-progress form draft and idempotency key in `localStorage`, which makes retry-after-refresh safe.
-
-## Project Structure
-
-- `backend/` Express API
-- `frontend/` Vite React app
+- MongoDB was chosen because it is quick to deploy with Atlas, fits this small document-shaped data model, and remains structured through Mongoose and Zod validation.
+- Money is stored as integer paise (`amountPaise`) instead of floating-point numbers to avoid rounding issues.
+- Expense dates are stored as `YYYY-MM-DD` strings to avoid timezone drift for calendar dates.
+- `POST /expenses` requires an `Idempotency-Key` header and stores a request fingerprint so client retries, refreshes, and double submits do not create duplicates.
+- The frontend keeps the active draft and idempotency key in `localStorage`, so users can safely retry after slow or failed requests.
+- Description is optional to reduce entry friction; amount, category, and date are required.
 
 ## API
 
@@ -44,12 +53,16 @@ Body:
 }
 ```
 
+`description` may be omitted or empty.
+
 ### `GET /expenses`
 
 Optional query params:
 
 - `category`
 - `sort=date_desc`
+- `fromDate=YYYY-MM-DD`
+- `toDate=YYYY-MM-DD`
 
 ## Local Setup
 
@@ -84,27 +97,15 @@ VITE_API_BASE_URL=http://localhost:4000
 
 ### Run locally
 
-In one terminal:
-
 ```bash
 npm run dev:backend
-```
-
-In another terminal:
-
-```bash
 npm run dev:frontend
 ```
 
-### Build
+### Build and test
 
 ```bash
 npm run build
-```
-
-### Test
-
-```bash
 npm run test
 ```
 
@@ -130,23 +131,25 @@ npm run test
 - Environment variables:
   - `VITE_API_BASE_URL=https://<your-render-domain>`
 
-## Timebox Trade-offs
+## Assignment Coverage
 
-- No authentication or multi-user support
-- No edit/delete flow
-- No pagination
-- No frontend test suite yet
-- Category is free text instead of a managed list
+- Required create/list/filter/sort/total flows are implemented.
+- Retry and refresh safety are handled with backend idempotency and frontend draft persistence.
+- Money handling avoids floats by storing paise as integers.
+- Basic validation prevents invalid amounts, missing required fields, and future expense dates.
+- Automated backend tests cover creation, idempotent replay, idempotency conflict, future dates, optional descriptions, category filtering, and date-range filtering.
 
-## What Was Intentionally Not Done
+## Trade-offs
+
+- No authentication or multi-user ownership because the assignment scope is a small personal tool.
+- No edit/delete flow yet; the focus is correctness for create/review behavior.
+- No pagination because the dataset is expected to be small for the exercise.
+- No frontend automated tests yet; backend integration tests cover the highest-risk correctness paths.
+- Categories are predefined in the frontend instead of backend-managed to keep the feature small and reduce inconsistent category names.
+
+## Intentionally Not Done
 
 - Summary by category view
 - Charts or advanced reporting
-- Optimistic UI updates
+- CSV export
 - Full deployment automation
-
-## Verification
-
-- Backend TypeScript build passes
-- Frontend production build passes
-- Backend API tests cover creation, idempotent replay, idempotency conflict, filtering, and newest-first sorting

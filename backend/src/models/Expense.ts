@@ -30,7 +30,7 @@ const expenseSchema = new Schema<ExpenseDocument>(
     },
     description: {
       type: String,
-      required: true,
+      default: "",
       trim: true,
     },
     date: {

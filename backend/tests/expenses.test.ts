@@ -107,6 +107,20 @@ describe("expenses API", () => {
     expect(response.body.message).toBe("Expense date cannot be in the future.");
   });
 
+  it("creates an expense without a description", async () => {
+    const response = await request(app)
+      .post("/expenses")
+      .set("Idempotency-Key", "expense-no-description")
+      .send({
+        amount: "25.00",
+        category: "Food",
+        date: "2026-04-23",
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.item.description).toBe("");
+  });
+
   it("lists expenses filtered by category in newest-first order", async () => {
     await request(app)
       .post("/expenses")
