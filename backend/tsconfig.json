@@ -5,7 +5,7 @@
     "moduleResolution": "Node",
     "ignoreDeprecations": "6.0",
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "src",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
