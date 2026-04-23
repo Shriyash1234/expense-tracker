@@ -120,6 +120,7 @@ npm run test
   - `MONGODB_DB_NAME`
   - `PORT`
   - `CORS_ORIGIN=https://<your-vercel-domain>`
+- Optional: use `render.yaml` from the repo root to prefill the backend service setup.
 
 ### Frontend on Vercel
 
