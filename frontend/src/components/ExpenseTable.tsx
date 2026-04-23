@@ -65,7 +65,7 @@ const ExpenseTable = ({
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="text-base font-semibold">Expenses</CardTitle>
             <CardDescription>
@@ -73,13 +73,13 @@ const ExpenseTable = ({
             </CardDescription>
           </div>
 
-          <div className="flex items-end gap-3">
+          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:flex sm:items-end">
             <div className="grid gap-1.5">
               <Label htmlFor="filter-category" className="text-xs text-muted-foreground">
                 Filter
               </Label>
               <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-                <SelectTrigger id="filter-category" className="h-8 w-[150px]">
+                <SelectTrigger id="filter-category" className="h-8 w-full min-[420px]:w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -105,7 +105,7 @@ const ExpenseTable = ({
             <div className="grid gap-1.5">
               <Label className="text-xs text-muted-foreground">Sort</Label>
               <Select value={sortOrder} onValueChange={onSortOrderChange}>
-                <SelectTrigger className="h-8 w-[140px]">
+                <SelectTrigger className="h-8 w-full min-[420px]:w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -141,7 +141,8 @@ const ExpenseTable = ({
             </p>
           </div>
         ) : (
-          <Table>
+          <div className="overflow-x-auto">
+          <Table className="min-w-[620px]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="pl-4">Date</TableHead>
@@ -182,6 +183,7 @@ const ExpenseTable = ({
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </CardContent>
     </Card>
