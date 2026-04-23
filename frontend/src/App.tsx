@@ -9,8 +9,47 @@ import ExpenseTable from "@/components/ExpenseTable";
 import { ALL_CATEGORIES_VALUE } from "@/categories";
 
 const DRAFT_STORAGE_KEY = "expense-tracker-draft";
+type DatePreset = "all" | "today" | "week" | "month" | "custom";
+type SortOrder = "newest" | "oldest" | "none";
 
 const getToday = () => new Date().toISOString().slice(0, 10);
+
+const formatDateInputValue = (date: Date) => date.toISOString().slice(0, 10);
+
+const getDateRangeForPreset = (preset: Exclude<DatePreset, "custom">) => {
+  const today = new Date();
+
+  if (preset === "all") {
+    return {
+      fromDate: "",
+      toDate: "",
+    };
+  }
+
+  if (preset === "today") {
+    const date = formatDateInputValue(today);
+
+    return {
+      fromDate: date,
+      toDate: date,
+    };
+  }
+
+  const startDate = new Date(today);
+
+  if (preset === "week") {
+    startDate.setDate(today.getDate() - today.getDay());
+  }
+
+  if (preset === "month") {
+    startDate.setDate(1);
+  }
+
+  return {
+    fromDate: formatDateInputValue(startDate),
+    toDate: formatDateInputValue(today),
+  };
+};
 
 const createEmptyForm = (): ExpenseFormState => ({
   amount: "",
@@ -68,8 +107,35 @@ const parseAmountToPaise = (amount: string) => {
 
 const isValidAmountInput = (value: string) => /^\d+(?:\.\d{1,2})?$/.test(value);
 
-const getVisibleExpenses = (items: Expense[], sortOrder: "newest" | "oldest") =>
-  sortOrder === "newest" ? items : [...items].reverse();
+const getVisibleExpenses = ({
+  items,
+  sortOrder,
+  fromDate,
+  toDate,
+}: {
+  items: Expense[];
+  sortOrder: SortOrder;
+  fromDate: string;
+  toDate: string;
+}) => {
+  const filteredItems = items.filter((item) => {
+    if (fromDate && item.date < fromDate) {
+      return false;
+    }
+
+    if (toDate && item.date > toDate) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (sortOrder === "none") {
+    return filteredItems;
+  }
+
+  return sortOrder === "newest" ? filteredItems : [...filteredItems].reverse();
+};
 
 const App = () => {
   const queryClient = useQueryClient();
@@ -77,12 +143,21 @@ const App = () => {
   const [form, setForm] = useState<ExpenseFormState>(initialForm);
   const [idempotencyKey, setIdempotencyKey] = useState(initialIdempotencyKey);
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES_VALUE);
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [datePreset, setDatePreset] = useState<DatePreset>("all");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [submitError, setSubmitError] = useState("");
 
   const expensesQuery = useQuery({
-    queryKey: ["expenses", categoryFilter],
-    queryFn: () => listExpenses(categoryFilter === ALL_CATEGORIES_VALUE ? "" : categoryFilter),
+    queryKey: ["expenses", categoryFilter, fromDate, toDate],
+    queryFn: () =>
+      listExpenses({
+        category: categoryFilter === ALL_CATEGORIES_VALUE ? "" : categoryFilter,
+        fromDate,
+        toDate,
+      }),
+    enabled: !fromDate || !toDate || fromDate <= toDate,
   });
 
   const createExpenseMutation = useMutation({
@@ -111,8 +186,14 @@ const App = () => {
   }, [form, idempotencyKey]);
 
   const visibleExpenses = useMemo(
-    () => getVisibleExpenses(expensesQuery.data?.items ?? [], sortOrder),
-    [expensesQuery.data?.items, sortOrder]
+    () =>
+      getVisibleExpenses({
+        items: expensesQuery.data?.items ?? [],
+        sortOrder,
+        fromDate,
+        toDate,
+      }),
+    [expensesQuery.data?.items, sortOrder, fromDate, toDate]
   );
 
   const totalAmount = useMemo(
@@ -183,9 +264,47 @@ const App = () => {
               : "Unable to load expenses."
           }
           categoryFilter={categoryFilter}
+          fromDate={fromDate}
+          toDate={toDate}
+          datePreset={datePreset}
           sortOrder={sortOrder}
           onCategoryFilterChange={setCategoryFilter}
-          onSortOrderChange={setSortOrder}
+          onDatePresetChange={(preset) => {
+            setDatePreset(preset);
+
+            if (preset !== "custom") {
+              const range = getDateRangeForPreset(preset);
+              setFromDate(range.fromDate);
+              setToDate(range.toDate);
+            }
+          }}
+          onFromDateChange={(date) => {
+            setDatePreset("custom");
+            setFromDate(date);
+          }}
+          onToDateChange={(date) => {
+            setDatePreset("custom");
+            setToDate(date);
+          }}
+          onClearDateRange={() => {
+            setDatePreset("all");
+            setFromDate("");
+            setToDate("");
+          }}
+          onClearCategoryFilter={() => setCategoryFilter(ALL_CATEGORIES_VALUE)}
+          onSortOrderChange={() =>
+            setSortOrder((current) => {
+              if (current === "newest") {
+                return "oldest";
+              }
+
+              if (current === "oldest") {
+                return "none";
+              }
+
+              return "newest";
+            })
+          }
           formatCurrency={formatCurrency}
           parseAmountToPaise={parseAmountToPaise}
         />

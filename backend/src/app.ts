@@ -144,11 +144,29 @@ export const createApp = () => {
   app.get("/expenses", async (request, response, next) => {
     try {
       const query = listExpensesQuerySchema.parse(request.query);
-      const filter = query.category
-        ? {
-            categoryKey: normalizeCategoryKey(query.category),
-          }
-        : {};
+      const filter: {
+        categoryKey?: string;
+        date?: {
+          $gte?: string;
+          $lte?: string;
+        };
+      } = {};
+
+      if (query.category) {
+        filter.categoryKey = normalizeCategoryKey(query.category);
+      }
+
+      if (query.fromDate || query.toDate) {
+        filter.date = {};
+
+        if (query.fromDate) {
+          filter.date.$gte = query.fromDate;
+        }
+
+        if (query.toDate) {
+          filter.date.$lte = query.toDate;
+        }
+      }
 
       const items = await ExpenseModel.find(filter)
         .sort({ date: -1, createdAt: -1 })

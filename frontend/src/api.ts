@@ -13,11 +13,29 @@ const readErrorMessage = async (response: Response) => {
   }
 };
 
-export const listExpenses = async (category: string): Promise<ExpenseListResponse> => {
+type ListExpensesParams = {
+  category: string;
+  fromDate: string;
+  toDate: string;
+};
+
+export const listExpenses = async ({
+  category,
+  fromDate,
+  toDate,
+}: ListExpensesParams): Promise<ExpenseListResponse> => {
   const url = new URL(buildUrl("/expenses"));
 
   if (category.trim()) {
     url.searchParams.set("category", category.trim());
+  }
+
+  if (fromDate) {
+    url.searchParams.set("fromDate", fromDate);
+  }
+
+  if (toDate) {
+    url.searchParams.set("toDate", toDate);
   }
 
   url.searchParams.set("sort", "date_desc");

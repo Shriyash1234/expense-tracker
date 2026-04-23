@@ -89,6 +89,24 @@ describe("expenses API", () => {
     expect(response.status).toBe(409);
   });
 
+  it("rejects future expense dates", async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const response = await request(app)
+      .post("/expenses")
+      .set("Idempotency-Key", "expense-future-date")
+      .send({
+        amount: "25.00",
+        category: "Food",
+        description: "Future lunch",
+        date: tomorrow.toISOString().slice(0, 10),
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("Expense date cannot be in the future.");
+  });
+
   it("lists expenses filtered by category in newest-first order", async () => {
     await request(app)
       .post("/expenses")
@@ -129,5 +147,47 @@ describe("expenses API", () => {
     expect(response.body.items).toHaveLength(2);
     expect(response.body.items[0].description).toBe("Groceries");
     expect(response.body.items[1].description).toBe("Dinner");
+  });
+
+  it("lists expenses filtered by date range", async () => {
+    await request(app)
+      .post("/expenses")
+      .set("Idempotency-Key", "expense-date-range-1")
+      .send({
+        amount: "50.00",
+        category: "Food",
+        description: "Before range",
+        date: "2026-04-01",
+      });
+
+    await request(app)
+      .post("/expenses")
+      .set("Idempotency-Key", "expense-date-range-2")
+      .send({
+        amount: "75.00",
+        category: "Food",
+        description: "Inside range",
+        date: "2026-04-10",
+      });
+
+    await request(app)
+      .post("/expenses")
+      .set("Idempotency-Key", "expense-date-range-3")
+      .send({
+        amount: "100.00",
+        category: "Travel",
+        description: "After range",
+        date: "2026-04-20",
+      });
+
+    const response = await request(app).get("/expenses").query({
+      fromDate: "2026-04-05",
+      toDate: "2026-04-15",
+      sort: "date_desc",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.items).toHaveLength(1);
+    expect(response.body.items[0].description).toBe("Inside range");
   });
 });

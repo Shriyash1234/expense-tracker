@@ -17,7 +17,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ALL_CATEGORIES_VALUE, CATEGORY_ICONS, EXPENSE_CATEGORIES } from "@/categories";
+import DatePicker from "@/components/DatePicker";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { Expense } from "@/types";
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from "lucide-react";
+
+type DatePreset = "all" | "today" | "week" | "month" | "custom";
+type SortOrder = "newest" | "oldest" | "none";
 
 type ExpenseTableProps = {
   expenses: Expense[];
@@ -25,9 +36,17 @@ type ExpenseTableProps = {
   isError: boolean;
   errorMessage: string;
   categoryFilter: string;
-  sortOrder: "newest" | "oldest";
+  fromDate: string;
+  toDate: string;
+  datePreset: DatePreset;
+  sortOrder: SortOrder;
   onCategoryFilterChange: (value: string) => void;
-  onSortOrderChange: (value: "newest" | "oldest") => void;
+  onDatePresetChange: (value: DatePreset) => void;
+  onFromDateChange: (value: string) => void;
+  onToDateChange: (value: string) => void;
+  onClearDateRange: () => void;
+  onClearCategoryFilter: () => void;
+  onSortOrderChange: () => void;
   formatCurrency: (amount: number) => string;
   parseAmountToPaise: (amount: string) => number;
 };
@@ -50,36 +69,73 @@ const getCategoryStyle = (category: string) => {
   return CATEGORY_COLORS[key] ?? "bg-zinc-100 text-zinc-600 border-zinc-200";
 };
 
+const getDateSortLabel = (sortOrder: SortOrder) => {
+  if (sortOrder === "newest") {
+    return "Date sorted newest first";
+  }
+
+  if (sortOrder === "oldest") {
+    return "Date sorted oldest first";
+  }
+
+  return "Date unsorted";
+};
+
+const DateSortIcon = ({ sortOrder }: { sortOrder: SortOrder }) => {
+  if (sortOrder === "newest") {
+    return <ArrowDownIcon className="size-3.5" />;
+  }
+
+  if (sortOrder === "oldest") {
+    return <ArrowUpIcon className="size-3.5" />;
+  }
+
+  return <ArrowUpDownIcon className="size-3.5" />;
+};
+
 const ExpenseTable = ({
   expenses,
   isLoading,
   isError,
   errorMessage,
   categoryFilter,
+  fromDate,
+  toDate,
+  datePreset,
   sortOrder,
   onCategoryFilterChange,
+  onDatePresetChange,
+  onFromDateChange,
+  onToDateChange,
+  onClearDateRange,
+  onClearCategoryFilter,
   onSortOrderChange,
   formatCurrency,
   parseAmountToPaise,
 }: ExpenseTableProps) => {
+  const hasCategoryFilter = categoryFilter !== ALL_CATEGORIES_VALUE;
+  const hasDateFilter = Boolean(fromDate || toDate);
+  const hasActiveFilters = hasCategoryFilter || hasDateFilter;
+  const dateLabel = fromDate && toDate ? `${fromDate} to ${toDate}` : "Custom range";
+
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+        <div className="grid gap-5 xl:grid-cols-[minmax(220px,1fr)_auto] xl:items-start xl:justify-between">
+          <div className="max-w-sm">
             <CardTitle className="text-base font-semibold">Expenses</CardTitle>
             <CardDescription>
               Filter by category and review your spending.
             </CardDescription>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:flex sm:items-end">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[170px_170px] lg:items-end">
             <div className="grid gap-1.5">
               <Label htmlFor="filter-category" className="text-xs text-muted-foreground">
-                Filter
+                Category
               </Label>
               <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-                <SelectTrigger id="filter-category" className="h-8 w-full min-[420px]:w-[150px]">
+                <SelectTrigger id="filter-category" className="h-9 w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -103,19 +159,115 @@ const ExpenseTable = ({
             </div>
 
             <div className="grid gap-1.5">
-              <Label className="text-xs text-muted-foreground">Sort</Label>
-              <Select value={sortOrder} onValueChange={onSortOrderChange}>
-                <SelectTrigger className="h-8 w-full min-[420px]:w-[140px]">
+              <Label className="text-xs text-muted-foreground">Period</Label>
+              <Select value={datePreset} onValueChange={onDatePresetChange}>
+                <SelectTrigger className="h-9 w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Newest first</SelectItem>
-                  <SelectItem value="oldest">Oldest first</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This week</SelectItem>
+                  <SelectItem value="month">This month</SelectItem>
+                  <SelectItem value="custom">Custom range</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
           </div>
         </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {datePreset === "custom" ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="sm">
+                  {dateLabel}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-80 p-4">
+                <div className="grid gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Custom range</p>
+                    <p className="text-xs text-muted-foreground">
+                      Choose the exact period you want to review.
+                    </p>
+                  </div>
+                  <div className="grid gap-3">
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="from-date" className="text-xs text-muted-foreground">
+                        From
+                      </Label>
+                      <DatePicker
+                        id="from-date"
+                        value={fromDate}
+                        onChange={onFromDateChange}
+                        placeholder="Start date"
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="to-date" className="text-xs text-muted-foreground">
+                        To
+                      </Label>
+                      <DatePicker
+                        id="to-date"
+                        value={toDate}
+                        onChange={onToDateChange}
+                        placeholder="End date"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!fromDate && !toDate}
+                    onClick={onClearDateRange}
+                  >
+                    Clear range
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : null}
+
+          {hasCategoryFilter ? (
+            <Badge variant="outline" className="gap-1.5">
+              {categoryFilter}
+              <button type="button" className="text-muted-foreground" onClick={onClearCategoryFilter}>
+                x
+              </button>
+            </Badge>
+          ) : null}
+
+          {hasDateFilter && datePreset !== "custom" ? (
+            <Badge variant="outline" className="gap-1.5">
+              {dateLabel}
+              <button type="button" className="text-muted-foreground" onClick={onClearDateRange}>
+                x
+              </button>
+            </Badge>
+          ) : null}
+
+          {hasActiveFilters ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onClearCategoryFilter();
+                onClearDateRange();
+              }}
+            >
+              Clear all
+            </Button>
+          ) : null}
+        </div>
+
+        {fromDate && toDate && fromDate > toDate ? (
+          <p className="mt-3 text-sm text-destructive">
+            From date must be before or equal to to date.
+          </p>
+        ) : null}
       </CardHeader>
 
       <CardContent className="px-0">
@@ -145,7 +297,18 @@ const ExpenseTable = ({
           <Table className="min-w-[620px]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="pl-4">Date</TableHead>
+                <TableHead className="pl-4">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 rounded-md text-left transition-colors hover:text-foreground"
+                    onClick={onSortOrderChange}
+                    aria-label={getDateSortLabel(sortOrder)}
+                    title={getDateSortLabel(sortOrder)}
+                  >
+                    Date
+                    <DateSortIcon sortOrder={sortOrder} />
+                  </button>
+                </TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="pr-4 text-right">Amount</TableHead>
