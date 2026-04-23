@@ -6,6 +6,7 @@ import type { Expense, ExpenseFormState } from "./types";
 import Header from "@/components/Header";
 import ExpenseForm from "@/components/ExpenseForm";
 import ExpenseTable from "@/components/ExpenseTable";
+import { ALL_CATEGORIES_VALUE } from "@/categories";
 
 const DRAFT_STORAGE_KEY = "expense-tracker-draft";
 
@@ -13,7 +14,7 @@ const getToday = () => new Date().toISOString().slice(0, 10);
 
 const createEmptyForm = (): ExpenseFormState => ({
   amount: "",
-  category: "",
+  category: "Food",
   description: "",
   date: getToday(),
 });
@@ -75,13 +76,13 @@ const App = () => {
   const [{ form: initialForm, idempotencyKey: initialIdempotencyKey }] = useState(loadDraft);
   const [form, setForm] = useState<ExpenseFormState>(initialForm);
   const [idempotencyKey, setIdempotencyKey] = useState(initialIdempotencyKey);
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES_VALUE);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [submitError, setSubmitError] = useState("");
 
   const expensesQuery = useQuery({
     queryKey: ["expenses", categoryFilter],
-    queryFn: () => listExpenses(categoryFilter),
+    queryFn: () => listExpenses(categoryFilter === ALL_CATEGORIES_VALUE ? "" : categoryFilter),
   });
 
   const createExpenseMutation = useMutation({
@@ -157,6 +158,18 @@ const App = () => {
           isPending={createExpenseMutation.isPending}
           submitError={submitError}
           onFieldChange={updateField}
+          onCategoryChange={(category) =>
+            setForm((current) => ({
+              ...current,
+              category,
+            }))
+          }
+          onDateChange={(date) =>
+            setForm((current) => ({
+              ...current,
+              date,
+            }))
+          }
           onSubmit={handleSubmit}
         />
 

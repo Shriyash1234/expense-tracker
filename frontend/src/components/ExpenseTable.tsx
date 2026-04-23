@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -17,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ALL_CATEGORIES_VALUE, CATEGORY_ICONS, EXPENSE_CATEGORIES } from "@/categories";
 import type { Expense } from "@/types";
 
 type ExpenseTableProps = {
@@ -34,12 +34,15 @@ type ExpenseTableProps = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: "bg-amber-50 text-amber-700 border-amber-200",
-  movie: "bg-purple-50 text-purple-700 border-purple-200",
   travel: "bg-blue-50 text-blue-700 border-blue-200",
   shopping: "bg-pink-50 text-pink-700 border-pink-200",
   health: "bg-emerald-50 text-emerald-700 border-emerald-200",
   bills: "bg-red-50 text-red-700 border-red-200",
   entertainment: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  groceries: "bg-lime-50 text-lime-700 border-lime-200",
+  education: "bg-cyan-50 text-cyan-700 border-cyan-200",
+  rent: "bg-orange-50 text-orange-700 border-orange-200",
+  other: "bg-zinc-100 text-zinc-600 border-zinc-200",
 };
 
 const getCategoryStyle = (category: string) => {
@@ -75,14 +78,28 @@ const ExpenseTable = ({
               <Label htmlFor="filter-category" className="text-xs text-muted-foreground">
                 Filter
               </Label>
-              <Input
-                id="filter-category"
-                type="text"
-                placeholder="Category..."
-                value={categoryFilter}
-                onChange={(e) => onCategoryFilterChange(e.target.value)}
-                className="h-8 w-[130px]"
-              />
+              <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
+                <SelectTrigger id="filter-category" className="h-8 w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_CATEGORIES_VALUE}>All categories</SelectItem>
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {(() => {
+                        const CategoryIcon = CATEGORY_ICONS[category];
+
+                        return (
+                          <>
+                            <CategoryIcon className="size-3.5 text-muted-foreground" />
+                            {category}
+                          </>
+                        );
+                      })()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-1.5">
@@ -140,12 +157,20 @@ const ExpenseTable = ({
                     {expense.date}
                   </TableCell>
                   <TableCell>
+                    {(() => {
+                      const CategoryIcon =
+                        CATEGORY_ICONS[expense.category as keyof typeof CATEGORY_ICONS];
+
+                      return (
                     <Badge
                       variant="outline"
-                      className={`text-[11px] font-medium ${getCategoryStyle(expense.category)}`}
+                      className={`gap-1.5 text-[11px] font-medium ${getCategoryStyle(expense.category)}`}
                     >
+                      {CategoryIcon ? <CategoryIcon className="size-3" /> : null}
                       {expense.category}
                     </Badge>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     {expense.description}

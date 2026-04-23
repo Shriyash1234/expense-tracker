@@ -4,6 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import DatePicker from "@/components/DatePicker";
+import { CATEGORY_ICONS, EXPENSE_CATEGORIES } from "@/categories";
 import type { ExpenseFormState } from "@/types";
 
 type ExpenseFormProps = {
@@ -11,10 +20,12 @@ type ExpenseFormProps = {
   isPending: boolean;
   submitError: string;
   onFieldChange: (field: keyof ExpenseFormState) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onCategoryChange: (value: string) => void;
+  onDateChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
-const ExpenseForm = ({ form, isPending, submitError, onFieldChange, onSubmit }: ExpenseFormProps) => {
+const ExpenseForm = ({ form, isPending, submitError, onFieldChange, onCategoryChange, onDateChange, onSubmit }: ExpenseFormProps) => {
   return (
     <Card>
       <CardHeader>
@@ -48,14 +59,27 @@ const ExpenseForm = ({ form, isPending, submitError, onFieldChange, onSubmit }: 
 
           <div className="grid gap-1.5">
             <Label htmlFor="expense-category">Category</Label>
-            <Input
-              id="expense-category"
-              type="text"
-              placeholder="Food"
-              value={form.category}
-              onChange={onFieldChange("category")}
-              required
-            />
+            <Select value={form.category} onValueChange={onCategoryChange} required>
+              <SelectTrigger id="expense-category" className="h-9 w-full">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {EXPENSE_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {(() => {
+                      const CategoryIcon = CATEGORY_ICONS[category];
+
+                      return (
+                        <>
+                          <CategoryIcon className="size-3.5 text-muted-foreground" />
+                          {category}
+                        </>
+                      );
+                    })()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-1.5">
@@ -73,12 +97,10 @@ const ExpenseForm = ({ form, isPending, submitError, onFieldChange, onSubmit }: 
 
           <div className="grid gap-1.5">
             <Label htmlFor="expense-date">Date</Label>
-            <Input
+            <DatePicker
               id="expense-date"
-              type="date"
               value={form.date}
-              onChange={onFieldChange("date")}
-              required
+              onChange={onDateChange}
             />
           </div>
 
