@@ -53,7 +53,16 @@ export const createApp = () => {
       }
 
       const parsedBody = createExpenseSchema.parse(request.body);
-      const amountPaise = parseAmountToPaise(parsedBody.amount);
+      let amountPaise: number;
+      try {
+        amountPaise = parseAmountToPaise(parsedBody.amount);
+      } catch (error) {
+        response.status(400).json({
+          error: "validation_error",
+          message: error instanceof Error ? error.message : "Invalid amount.",
+        });
+        return;
+      }
       const category = parsedBody.category.trim();
       const description = parsedBody.description.trim();
       const date = parsedBody.date.trim();

@@ -29,11 +29,19 @@ const ExpenseForm = ({ form, isPending, submitError, onFieldChange, onSubmit }: 
             <Label htmlFor="expense-amount">Amount</Label>
             <Input
               id="expense-amount"
-              type="text"
+              type="number"
               inputMode="decimal"
               placeholder="123.45"
               value={form.amount}
               onChange={onFieldChange("amount")}
+              min="0.01"
+              step="0.01"
+              onKeyDown={(event) => {
+                // Prevent exponent/negative input on number fields (still validate on submit too).
+                if (["e", "E", "+", "-"].includes(event.key)) {
+                  event.preventDefault();
+                }
+              }}
               required
             />
           </div>

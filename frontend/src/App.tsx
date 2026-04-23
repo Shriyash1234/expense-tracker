@@ -65,6 +65,8 @@ const parseAmountToPaise = (amount: string) => {
   return Number(rupees) * 100 + Number(`${paise}00`.slice(0, 2));
 };
 
+const isValidAmountInput = (value: string) => /^\d+(?:\.\d{1,2})?$/.test(value);
+
 const getVisibleExpenses = (items: Expense[], sortOrder: "newest" | "oldest") =>
   sortOrder === "newest" ? items : [...items].reverse();
 
@@ -132,6 +134,13 @@ const App = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitError("");
+
+    const amount = form.amount.trim();
+    if (!isValidAmountInput(amount) || parseAmountToPaise(amount) <= 0) {
+      setSubmitError("Amount must be a positive number with up to 2 decimal places.");
+      return;
+    }
+
     await createExpenseMutation.mutateAsync();
   };
 
