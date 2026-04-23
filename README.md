@@ -8,6 +8,8 @@ Minimal full-stack expense tracker built for the assignment with a Node.js backe
 - Backend API: https://expense-tracker-b1fo.onrender.com
 - Repository: https://github.com/Shriyash1234/expense-tracker
 
+Note: the backend is hosted on Render's free tier, so the first request after inactivity may take a short time while the service wakes up.
+
 ## Features
 
 - Create expenses with amount, category, optional description, and date.
