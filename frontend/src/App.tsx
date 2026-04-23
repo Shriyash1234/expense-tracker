@@ -3,6 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { createExpense, listExpenses } from "./api";
 import type { Expense, ExpenseFormState } from "./types";
+import Header from "@/components/Header";
+import ExpenseForm from "@/components/ExpenseForm";
+import ExpenseTable from "@/components/ExpenseTable";
 
 const DRAFT_STORAGE_KEY = "expense-tracker-draft";
 
@@ -133,146 +136,38 @@ const App = () => {
   };
 
   return (
-    <main className="page">
-      <section className="panel hero">
-        <div>
-          <p className="eyebrow">Personal finance</p>
-          <h1>Expense Tracker</h1>
-          <p className="hero-copy">
-            Track day-to-day spending with retry-safe submissions, clear filtering, and a live total.
-          </p>
-        </div>
-        <div className="total-card">
-          <span>Visible total</span>
-          <strong>{formatCurrency(totalAmount)}</strong>
-        </div>
-      </section>
+    <main className="mx-auto max-w-[1120px] px-4 py-6 sm:px-6 sm:py-8">
+      <Header
+        totalAmount={formatCurrency(totalAmount)}
+        expenseCount={visibleExpenses.length}
+      />
 
-      <section className="content-grid">
-        <form className="panel form-panel" onSubmit={handleSubmit}>
-          <div className="section-heading">
-            <h2>Add expense</h2>
-            <p>Your draft stays safe if the request fails or the page refreshes.</p>
-          </div>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[340px_1fr]">
+        <ExpenseForm
+          form={form}
+          isPending={createExpenseMutation.isPending}
+          submitError={submitError}
+          onFieldChange={updateField}
+          onSubmit={handleSubmit}
+        />
 
-          <label>
-            Amount
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="123.45"
-              value={form.amount}
-              onChange={updateField("amount")}
-              required
-            />
-          </label>
-
-          <label>
-            Category
-            <input
-              type="text"
-              placeholder="Food"
-              value={form.category}
-              onChange={updateField("category")}
-              required
-            />
-          </label>
-
-          <label>
-            Description
-            <textarea
-              rows={3}
-              placeholder="Lunch with team"
-              value={form.description}
-              onChange={updateField("description")}
-              required
-            />
-          </label>
-
-          <label>
-            Date
-            <input type="date" value={form.date} onChange={updateField("date")} required />
-          </label>
-
-          {submitError ? <p className="message error">{submitError}</p> : null}
-
-          <button type="submit" disabled={createExpenseMutation.isPending}>
-            {createExpenseMutation.isPending ? "Saving..." : "Save expense"}
-          </button>
-        </form>
-
-        <section className="panel list-panel">
-          <div className="toolbar">
-            <div className="section-heading">
-              <h2>Expenses</h2>
-              <p>Filter by category and review the latest expenses first.</p>
-            </div>
-
-            <div className="toolbar-controls">
-              <label>
-                Filter by category
-                <input
-                  type="text"
-                  placeholder="Food"
-                  value={categoryFilter}
-                  onChange={(event) => setCategoryFilter(event.target.value)}
-                />
-              </label>
-
-              <label>
-                Sort
-                <select
-                  value={sortOrder}
-                  onChange={(event) => setSortOrder(event.target.value as "newest" | "oldest")}
-                >
-                  <option value="newest">Newest first</option>
-                  <option value="oldest">Oldest first</option>
-                </select>
-              </label>
-            </div>
-          </div>
-
-          {expensesQuery.isLoading ? <p className="message">Loading expenses...</p> : null}
-          {expensesQuery.isError ? (
-            <p className="message error">
-              {expensesQuery.error instanceof Error
-                ? expensesQuery.error.message
-                : "Unable to load expenses."}
-            </p>
-          ) : null}
-
-          {!expensesQuery.isLoading && !visibleExpenses.length ? (
-            <p className="message">No expenses yet for the current view.</p>
-          ) : null}
-
-          {visibleExpenses.length ? (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th className="amount-cell">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleExpenses.map((expense) => (
-                    <tr key={expense.id}>
-                      <td>{expense.date}</td>
-                      <td>{expense.category}</td>
-                      <td>{expense.description}</td>
-                      <td className="amount-cell">
-                        {formatCurrency(parseAmountToPaise(expense.amount))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </section>
-      </section>
+        <ExpenseTable
+          expenses={visibleExpenses}
+          isLoading={expensesQuery.isLoading}
+          isError={expensesQuery.isError}
+          errorMessage={
+            expensesQuery.error instanceof Error
+              ? expensesQuery.error.message
+              : "Unable to load expenses."
+          }
+          categoryFilter={categoryFilter}
+          sortOrder={sortOrder}
+          onCategoryFilterChange={setCategoryFilter}
+          onSortOrderChange={setSortOrder}
+          formatCurrency={formatCurrency}
+          parseAmountToPaise={parseAmountToPaise}
+        />
+      </div>
     </main>
   );
 };
